@@ -439,3 +439,41 @@ macro_rules! builder_flag {
         }
     };
 }
+
+/// Appends a flag and its value if the given `Option<String>` is `Some`.
+///
+/// This macro is useful for CLI builders where a flag like `--sort-key`
+/// is followed by a user-specified string. It avoids writing the common
+/// `if let Some(val)` boilerplate.
+///
+/// ## Parameters
+/// - `$vec`: the mutable `Vec<String>` to append to
+/// - `$opt`: the `Option<String>` field to check
+/// - `$flag`: the flag to push if `$opt` is `Some`
+///
+/// ## Example
+/// ```rust
+/// let mut parts = vec![];
+/// let sort_key = Some("name".to_string());
+///
+/// sc_if_some_flag!(parts, sort_key, "--sort-key");
+///
+/// assert_eq!(parts, vec!["--sort-key", "name"]);
+/// ```
+///
+/// ## Expands To
+/// ```rust
+/// if let Some(value) = &sort_key {
+///     parts.push("--sort-key".to_string());
+///     parts.push(value.clone());
+/// }
+/// ```
+#[macro_export]
+macro_rules! sc_if_some_flag {
+    ($vec:expr, $opt:expr, $flag:expr) => {
+        if let Some(val) = &$opt {
+            $vec.push($flag.to_string());
+            $vec.push(val.clone());
+        }
+    };
+}
