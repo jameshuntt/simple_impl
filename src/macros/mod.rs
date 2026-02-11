@@ -44,6 +44,32 @@ macro_rules! sc_flags {
     }};
 }
 
+/// Push boolean flags onto `parts` when the corresponding struct fields are `true`.
+///
+/// **Replaces:**
+/// ```rust
+/// if self.verbose { parts.push("--verbose".into()); }
+/// if self.force   { parts.push("--force".into()); }
+/// ```
+///
+/// **Usage:**
+/// ```rust
+/// sc_flags_into!(parts, self,
+///     verbose => "--verbose",
+///     force   => "--force",
+/// );
+/// ```
+#[macro_export]
+macro_rules! sc_flags_into {
+    ($parts:ident, $this:ident, $( $field:ident => $flag:expr ),* $(,)?) => {{
+        $(
+            if $this.$field {
+                $parts.push($flag.into());
+            }
+        )*
+    }};
+}
+
 /// Push `--flag value` pairs for `Option<T>` fields.
 ///
 /// For each mapping `$field => $flag`, if `self.$field` is `Some(v)`,
@@ -148,6 +174,52 @@ macro_rules! sc_if_some_display {
     ($parts:ident, $opt:expr $(,)?) => {{
         if let Some(v) = &($opt) {
             $parts.push(v.to_string());
+        }
+    }};
+}
+
+/// Push `v.into()` when an `Option` is `Some(v)`.
+///
+/// **Replaces:**
+/// ```rust
+/// if let Some(pid) = self.pid {
+///     parts.push(pid.into());
+/// }
+/// ```
+///
+/// **Usage:**
+/// ```rust
+/// sc_if_some_into!(parts, self.pid);
+/// ```
+#[macro_export]
+macro_rules! sc_if_some_into {
+    // Common case: Some(v) => push v.into()
+    ($parts:ident, $opt:expr $(,)?) => {{
+        if let Some(v) = &($opt) {
+            $parts.push(v.into());
+        }
+    }};
+}
+
+/// Push `v.clone()` when an `Option` is `Some(v)`.
+///
+/// **Replaces:**
+/// ```rust
+/// if let Some(pid) = self.pid {
+///     parts.push(pid.clone());
+/// }
+/// ```
+///
+/// **Usage:**
+/// ```rust
+/// sc_if_some_clone!(parts, self.pid);
+/// ```
+#[macro_export]
+macro_rules! sc_if_some_clone {
+    // Common case: Some(v) => push v.into()
+    ($parts:ident, $opt:expr $(,)?) => {{
+        if let Some(v) = &($opt) {
+            $parts.push(v.clone());
         }
     }};
 }
@@ -477,3 +549,4 @@ macro_rules! sc_if_some_flag {
         }
     };
 }
+
