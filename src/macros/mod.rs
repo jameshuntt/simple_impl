@@ -1,15 +1,13 @@
-/// Create the initial `parts` vector with the command name.
+//! The macros. `sc_*` build the argument vector of a shell command from a
+//! struct's fields; `builder_*` write the setters of a builder.
+
+/// The argument vector, started with the command name.
 ///
-/// **Replaces:**
-/// ```rust
-/// let mut parts = vec!["kill".to_string()];
-/// // or
-/// let mut parts = vec!["file".to_string()];
 /// ```
+/// use simple_impl::sc_cmd;
 ///
-/// **Usage:**
-/// ```rust
-/// let mut parts = sc_cmd!("kill");
+/// let parts = sc_cmd!("kill");
+/// assert_eq!(parts, vec!["kill".to_string()]);
 /// ```
 #[macro_export]
 macro_rules! sc_cmd {
@@ -18,20 +16,17 @@ macro_rules! sc_cmd {
     };
 }
 
-/// Push boolean flags onto `parts` when the corresponding struct fields are `true`.
+/// Push a flag for every `bool` field that is `true`.
 ///
-/// **Replaces:**
-/// ```rust
-/// if self.verbose { parts.push("--verbose".to_string()); }
-/// if self.force   { parts.push("--force".to_string()); }
 /// ```
+/// use simple_impl::{sc_cmd, sc_flags};
 ///
-/// **Usage:**
-/// ```rust
-/// sc_flags!(parts, self,
-///     verbose => "--verbose",
-///     force   => "--force",
-/// );
+/// struct Rm { force: bool, verbose: bool }
+/// let cmd = Rm { force: true, verbose: false };
+///
+/// let mut parts = sc_cmd!("rm");
+/// sc_flags!(parts, cmd, force => "--force", verbose => "--verbose");
+/// assert_eq!(parts, ["rm", "--force"]);
 /// ```
 #[macro_export]
 macro_rules! sc_flags {
@@ -44,20 +39,18 @@ macro_rules! sc_flags {
     }};
 }
 
-/// Push boolean flags onto `parts` when the corresponding struct fields are `true`.
+/// [`sc_flags!`] with `.into()` instead of `.to_string()`, for a `parts`
+/// whose element type is not `String`.
 ///
-/// **Replaces:**
-/// ```rust
-/// if self.verbose { parts.push("--verbose".into()); }
-/// if self.force   { parts.push("--force".into()); }
 /// ```
+/// use simple_impl::sc_flags_into;
 ///
-/// **Usage:**
-/// ```rust
-/// sc_flags_into!(parts, self,
-///     verbose => "--verbose",
-///     force   => "--force",
-/// );
+/// struct Rm { force: bool }
+/// let cmd = Rm { force: true };
+///
+/// let mut parts: Vec<std::ffi::OsString> = Vec::new();
+/// sc_flags_into!(parts, cmd, force => "--force");
+/// assert_eq!(parts, [std::ffi::OsString::from("--force")]);
 /// ```
 #[macro_export]
 macro_rules! sc_flags_into {
@@ -70,29 +63,20 @@ macro_rules! sc_flags_into {
     }};
 }
 
-/// Push `--flag value` pairs for `Option<T>` fields.
+/// Push `flag` then the value for every `Option` field that is `Some`.
 ///
-/// For each mapping `$field => $flag`, if `self.$field` is `Some(v)`,
-/// this pushes `$flag` and then `v.to_string()`.
-///
-/// **Replaces:**
-/// ```rust
-/// if let Some(out) = &self.output {
-///     parts.push("--output".to_string());
-///     parts.push(out.to_string());
-/// }
 /// ```
+/// use simple_impl::{sc_cmd, sc_opt_kv};
 ///
-/// **Usage:**
-/// ```rust
-/// sc_opt_kv!(parts, self,
-///     output => "--output",
-///     format => "--format",
-/// );
+/// struct Convert { output: Option<String>, quality: Option<u8> }
+/// let cmd = Convert { output: Some("out.png".into()), quality: None };
+///
+/// let mut parts = sc_cmd!("convert");
+/// sc_opt_kv!(parts, cmd, output => "--output", quality => "--quality");
+/// assert_eq!(parts, ["convert", "--output", "out.png"]);
 /// ```
 #[macro_export]
 macro_rules! sc_opt_kv {
-    // Option<T>: if Some(v) => push flag then v.to_string()
     ($parts:ident, $this:ident, $( $field:ident => $flag:expr ),* $(,)?) => {{
         $(
             if let Some(v) = &$this.$field {
@@ -103,22 +87,15 @@ macro_rules! sc_opt_kv {
     }};
 }
 
-/// Push positional args onto `parts`.
+/// Push positional arguments, each through `.into()`.
 ///
-/// Each expression is pushed using `.into()` (commonly `String`).
-///
-/// **Replaces:**
-/// ```rust
-/// parts.push(self.filename.clone());
-/// parts.push(target.to_string());
 /// ```
+/// use simple_impl::{sc_cmd, sc_args};
 ///
-/// **Usage:**
-/// ```rust
-/// sc_args!(parts,
-///     self.filename.clone(),
-///     "extra".to_string(),
-/// );
+/// let source = String::from("a.txt");
+/// let mut parts = sc_cmd!("cp");
+/// sc_args!(parts, source.clone(), "b.txt");
+/// assert_eq!(parts, ["cp", "a.txt", "b.txt"]);
 /// ```
 #[macro_export]
 macro_rules! sc_args {
@@ -129,25 +106,19 @@ macro_rules! sc_args {
     }};
 }
 
-/// Push a mapped value when an `Option` is `Some`.
+/// Push the mapped value of an `Option` when it is `Some`. The mapper gets
+/// `&T` and returns a `String`.
 ///
-/// The mapper receives `&T` and must return a `String`.
-///
-/// **Replaces:**
-/// ```rust
-/// if let Some(sig) = &self.signal {
-///     parts.push(format!("-{}", sig));
-/// }
 /// ```
+/// use simple_impl::{sc_cmd, sc_if_some};
 ///
-/// **Usage:**
-/// ```rust
-/// sc_if_some!(parts, self.signal, |sig| format!("-{}", sig));
+/// let signal: Option<u8> = Some(9);
+/// let mut parts = sc_cmd!("kill");
+/// sc_if_some!(parts, signal, |sig| format!("-{sig}"));
+/// assert_eq!(parts, ["kill", "-9"]);
 /// ```
 #[macro_export]
 macro_rules! sc_if_some {
-    // Push mapped value when Option is Some(..)
-    // The mapper takes a reference to the inner value: |v| -> String
     ($parts:ident, $opt:expr, $map:expr $(,)?) => {{
         if let Some(v) = &($opt) {
             $parts.push(($map)(v));
@@ -157,20 +128,18 @@ macro_rules! sc_if_some {
 
 /// Push `v.to_string()` when an `Option` is `Some(v)`.
 ///
-/// **Replaces:**
-/// ```rust
-/// if let Some(pid) = self.pid {
-///     parts.push(pid.to_string());
-/// }
 /// ```
+/// use simple_impl::{sc_cmd, sc_if_some_display};
 ///
-/// **Usage:**
-/// ```rust
-/// sc_if_some_display!(parts, self.pid);
+/// let pid: Option<u32> = Some(4242);
+/// let none: Option<u32> = None;
+/// let mut parts = sc_cmd!("kill");
+/// sc_if_some_display!(parts, pid);
+/// sc_if_some_display!(parts, none);
+/// assert_eq!(parts, ["kill", "4242"]);
 /// ```
 #[macro_export]
 macro_rules! sc_if_some_display {
-    // Common case: Some(v) => push v.to_string()
     ($parts:ident, $opt:expr $(,)?) => {{
         if let Some(v) = &($opt) {
             $parts.push(v.to_string());
@@ -180,43 +149,35 @@ macro_rules! sc_if_some_display {
 
 /// Push `v.into()` when an `Option` is `Some(v)`.
 ///
-/// **Replaces:**
-/// ```rust
-/// if let Some(pid) = self.pid {
-///     parts.push(pid.into());
-/// }
 /// ```
+/// use simple_impl::sc_if_some_into;
 ///
-/// **Usage:**
-/// ```rust
-/// sc_if_some_into!(parts, self.pid);
+/// let name: Option<&str> = Some("x");
+/// let mut parts: Vec<String> = Vec::new();
+/// sc_if_some_into!(parts, name);
+/// assert_eq!(parts, ["x"]);
 /// ```
 #[macro_export]
 macro_rules! sc_if_some_into {
-    // Common case: Some(v) => push v.into()
     ($parts:ident, $opt:expr $(,)?) => {{
         if let Some(v) = &($opt) {
-            $parts.push(v.into());
+            $parts.push((*v).into());
         }
     }};
 }
 
 /// Push `v.clone()` when an `Option` is `Some(v)`.
 ///
-/// **Replaces:**
-/// ```rust
-/// if let Some(pid) = self.pid {
-///     parts.push(pid.clone());
-/// }
 /// ```
+/// use simple_impl::sc_if_some_clone;
 ///
-/// **Usage:**
-/// ```rust
-/// sc_if_some_clone!(parts, self.pid);
+/// let name: Option<String> = Some("x".into());
+/// let mut parts: Vec<String> = Vec::new();
+/// sc_if_some_clone!(parts, name);
+/// assert_eq!(parts, ["x"]);
 /// ```
 #[macro_export]
 macro_rules! sc_if_some_clone {
-    // Common case: Some(v) => push v.into()
     ($parts:ident, $opt:expr $(,)?) => {{
         if let Some(v) = &($opt) {
             $parts.push(v.clone());
@@ -226,20 +187,16 @@ macro_rules! sc_if_some_clone {
 
 /// Push `format!("{prefix}{v}")` when an `Option` is `Some(v)`.
 ///
-/// **Replaces:**
-/// ```rust
-/// if let Some(sig) = &self.signal {
-///     parts.push(format!("-{}", sig));
-/// }
 /// ```
+/// use simple_impl::{sc_cmd, sc_if_some_prefix};
 ///
-/// **Usage:**
-/// ```rust
-/// sc_if_some_prefix!(parts, self.signal, "-");
+/// let signal: Option<&str> = Some("TERM");
+/// let mut parts = sc_cmd!("kill");
+/// sc_if_some_prefix!(parts, signal, "-");
+/// assert_eq!(parts, ["kill", "-TERM"]);
 /// ```
 #[macro_export]
 macro_rules! sc_if_some_prefix {
-    // Common case: Some(v) => push format!("{prefix}{v}")
     ($parts:ident, $opt:expr, $prefix:expr $(,)?) => {{
         if let Some(v) = &($opt) {
             $parts.push(format!("{}{}", $prefix, v));
@@ -247,25 +204,18 @@ macro_rules! sc_if_some_prefix {
     }};
 }
 
-/// Push mapped values for each item in an iterator.
+/// Push the mapped value of every item of an iterator.
 ///
-/// The mapper receives the iterator item and must return a `String`.
-///
-/// **Replaces:**
-/// ```rust
-/// for pid in &self.pids {
-///     parts.push(pid.to_string());
-/// }
 /// ```
+/// use simple_impl::{sc_cmd, sc_each};
 ///
-/// **Usage:**
-/// ```rust
-/// sc_each!(parts, &self.pids, |pid| pid.to_string());
+/// let pids = [1u32, 2, 3];
+/// let mut parts = sc_cmd!("kill");
+/// sc_each!(parts, &pids, |pid: &u32| format!("{pid}"));
+/// assert_eq!(parts, ["kill", "1", "2", "3"]);
 /// ```
 #[macro_export]
 macro_rules! sc_each {
-    // Push mapped value for each item in an iterator
-    // mapper takes the iterator item: |item| -> String
     ($parts:ident, $iter:expr, $map:expr $(,)?) => {{
         for item in ($iter) {
             $parts.push(($map)(item));
@@ -273,22 +223,18 @@ macro_rules! sc_each {
     }};
 }
 
-/// Push `item.to_string()` for each item in an iterator.
+/// Push `item.to_string()` for every item of an iterator.
 ///
-/// **Replaces:**
-/// ```rust
-/// for pid in &self.pids {
-///     parts.push(pid.to_string());
-/// }
 /// ```
+/// use simple_impl::{sc_cmd, sc_each_display};
 ///
-/// **Usage:**
-/// ```rust
-/// sc_each_display!(parts, &self.pids);
+/// let pids = vec![10u32, 20];
+/// let mut parts = sc_cmd!("kill");
+/// sc_each_display!(parts, &pids);
+/// assert_eq!(parts, ["kill", "10", "20"]);
 /// ```
 #[macro_export]
 macro_rules! sc_each_display {
-    // Common case: push item.to_string()
     ($parts:ident, $iter:expr $(,)?) => {{
         for item in ($iter) {
             $parts.push(item.to_string());
@@ -296,20 +242,37 @@ macro_rules! sc_each_display {
     }};
 }
 
-/// Generate a `new()` constructor that delegates to `Default`.
+/// Push `flag` then the clone of an `Option<String>` when it is `Some`.
 ///
-/// **Replaces:**
-/// ```rust
-/// pub fn new() -> Self {
-///     Self::default()
-/// }
 /// ```
+/// use simple_impl::{sc_cmd, sc_if_some_flag};
 ///
-/// **Usage:**
-/// ```rust
-/// impl MyBuilder {
+/// let sort_key = Some("name".to_string());
+/// let mut parts = sc_cmd!("ls");
+/// sc_if_some_flag!(parts, sort_key, "--sort-key");
+/// assert_eq!(parts, ["ls", "--sort-key", "name"]);
+/// ```
+#[macro_export]
+macro_rules! sc_if_some_flag {
+    ($vec:expr, $opt:expr, $flag:expr) => {
+        if let Some(val) = &$opt {
+            $vec.push($flag.to_string());
+            $vec.push(val.clone());
+        }
+    };
+}
+
+/// A `new()` that delegates to `Default`, optionally with a visibility.
+///
+/// ```
+/// use simple_impl::builder_new_default;
+///
+/// #[derive(Default, Debug, PartialEq)]
+/// struct Kill { pid: Option<u32> }
+/// impl Kill {
 ///     builder_new_default!();
 /// }
+/// assert_eq!(Kill::new(), Kill::default());
 /// ```
 #[macro_export]
 macro_rules! builder_new_default {
@@ -327,19 +290,17 @@ macro_rules! builder_new_default {
     };
 }
 
-/// Generate a builder setter for an `Option<T>` field (no `Into`).
+/// A setter for an `Option<T>` field, taking `T`.
 ///
-/// **Replaces:**
-/// ```rust
-/// pub fn pid(mut self, pid: u32) -> Self {
-///     self.pid = Some(pid);
-///     self
-/// }
 /// ```
+/// use simple_impl::builder_opt;
 ///
-/// **Usage:**
-/// ```rust
-/// builder_opt!(pid => pid: u32);
+/// #[derive(Default)]
+/// struct Kill { pid: Option<u32> }
+/// impl Kill {
+///     builder_opt!(pid => pid: u32);
+/// }
+/// assert_eq!(Kill::default().pid(7).pid, Some(7));
 /// ```
 #[macro_export]
 macro_rules! builder_opt {
@@ -352,19 +313,17 @@ macro_rules! builder_opt {
     };
 }
 
-/// Generate a builder setter for an `Option<T>` field using `Into<T>`.
+/// A setter for an `Option<T>` field, taking `impl Into<T>`.
 ///
-/// **Replaces:**
-/// ```rust
-/// pub fn signal(mut self, sig: impl Into<String>) -> Self {
-///     self.signal = Some(sig.into());
-///     self
-/// }
 /// ```
+/// use simple_impl::builder_opt_into;
 ///
-/// **Usage:**
-/// ```rust
-/// builder_opt_into!(signal => signal: String);
+/// #[derive(Default)]
+/// struct Kill { signal: Option<String> }
+/// impl Kill {
+///     builder_opt_into!(signal => signal: String);
+/// }
+/// assert_eq!(Kill::default().signal("TERM").signal.as_deref(), Some("TERM"));
 /// ```
 #[macro_export]
 macro_rules! builder_opt_into {
@@ -377,19 +336,18 @@ macro_rules! builder_opt_into {
     };
 }
 
-/// Generate a builder setter for a non-`Option` field.
+/// A setter for a plain field, taking the value.
 ///
-/// **Replaces:**
-/// ```rust
-/// pub fn cwd(mut self, cwd: PathBuf) -> Self {
-///     self.cwd = cwd;
-///     self
-/// }
 /// ```
+/// use simple_impl::builder_set;
+/// use std::path::PathBuf;
 ///
-/// **Usage:**
-/// ```rust
-/// builder_set!(cwd => cwd: std::path::PathBuf);
+/// #[derive(Default)]
+/// struct Run { cwd: PathBuf }
+/// impl Run {
+///     builder_set!(cwd => cwd: PathBuf);
+/// }
+/// assert_eq!(Run::default().cwd(PathBuf::from("/tmp")).cwd, PathBuf::from("/tmp"));
 /// ```
 #[macro_export]
 macro_rules! builder_set {
@@ -402,19 +360,17 @@ macro_rules! builder_set {
     };
 }
 
-/// Generate a builder setter for a `Vec<T>` field from something convertible into `Vec<T>`.
+/// A setter for a `Vec<T>` field, taking `impl Into<Vec<T>>`.
 ///
-/// **Replaces:**
-/// ```rust
-/// pub fn pids(mut self, list: impl Into<Vec<u32>>) -> Self {
-///     self.pids = list.into();
-///     self
-/// }
 /// ```
+/// use simple_impl::builder_vec_into;
 ///
-/// **Usage:**
-/// ```rust
-/// builder_vec_into!(pids => pids: u32);
+/// #[derive(Default)]
+/// struct Kill { pids: Vec<u32> }
+/// impl Kill {
+///     builder_vec_into!(pids => pids: u32);
+/// }
+/// assert_eq!(Kill::default().pids(vec![1, 2]).pids, [1, 2]);
 /// ```
 #[macro_export]
 macro_rules! builder_vec_into {
@@ -427,29 +383,22 @@ macro_rules! builder_vec_into {
     };
 }
 
-/// Generate a builder setter for a `Vec<T>` field from any `IntoIterator<Item = T>`.
+/// A setter for a `Vec<T>` field, taking any `IntoIterator<Item = T>`:
+/// a `Vec`, an array, an iterator.
 ///
-/// This accepts `Vec<T>`, arrays, iterators, etc.
-///
-/// **Replaces:**
-/// ```rust
-/// pub fn pids<I>(mut self, iter: I) -> Self
-/// where
-///     I: IntoIterator<Item = u32>,
-/// {
-///     self.pids = iter.into_iter().collect();
-///     self
-/// }
 /// ```
+/// use simple_impl::builder_vec_iter;
 ///
-/// **Usage:**
-/// ```rust
-/// builder_vec_iter!(pids => pids: u32);
-/// // then you can do: .pids([1,2,3]) or .pids(vec![1,2,3])
+/// #[derive(Default)]
+/// struct Kill { pids: Vec<u32> }
+/// impl Kill {
+///     builder_vec_iter!(pids => pids: u32);
+/// }
+/// assert_eq!(Kill::default().pids([1, 2, 3]).pids, [1, 2, 3]);
+/// assert_eq!(Kill::default().pids((1..=2).map(|n| n * 10)).pids, [10, 20]);
 /// ```
 #[macro_export]
 macro_rules! builder_vec_iter {
-    // More flexible than Into<Vec<T>>: accepts Vec, arrays, iterators, etc.
     ($name:ident => $field:ident : $elem:ty) => {
         #[inline]
         pub fn $name<I>(mut self, iter: I) -> Self
@@ -462,19 +411,17 @@ macro_rules! builder_vec_iter {
     };
 }
 
-/// Generate a builder method that pushes a single element into a `Vec<T>` field.
+/// A method that pushes one element onto a `Vec<T>` field.
 ///
-/// **Replaces:**
-/// ```rust
-/// pub fn push_pid(mut self, pid: u32) -> Self {
-///     self.pids.push(pid);
-///     self
-/// }
 /// ```
+/// use simple_impl::builder_push;
 ///
-/// **Usage:**
-/// ```rust
-/// builder_push!(push_pid => pids: u32);
+/// #[derive(Default)]
+/// struct Kill { pids: Vec<u32> }
+/// impl Kill {
+///     builder_push!(push_pid => pids: u32);
+/// }
+/// assert_eq!(Kill::default().push_pid(1).push_pid(2).pids, [1, 2]);
 /// ```
 #[macro_export]
 macro_rules! builder_push {
@@ -487,19 +434,17 @@ macro_rules! builder_push {
     };
 }
 
-/// Generate a builder method that flips a boolean field to `true`.
+/// A method that sets a `bool` field to `true`.
 ///
-/// **Replaces:**
-/// ```rust
-/// pub fn verbose(mut self) -> Self {
-///     self.verbose = true;
-///     self
-/// }
 /// ```
+/// use simple_impl::builder_flag;
 ///
-/// **Usage:**
-/// ```rust
-/// builder_flag!(verbose => verbose);
+/// #[derive(Default)]
+/// struct Rm { force: bool }
+/// impl Rm {
+///     builder_flag!(force => force);
+/// }
+/// assert!(Rm::default().force().force);
 /// ```
 #[macro_export]
 macro_rules! builder_flag {
@@ -511,42 +456,3 @@ macro_rules! builder_flag {
         }
     };
 }
-
-/// Appends a flag and its value if the given `Option<String>` is `Some`.
-///
-/// This macro is useful for CLI builders where a flag like `--sort-key`
-/// is followed by a user-specified string. It avoids writing the common
-/// `if let Some(val)` boilerplate.
-///
-/// ## Parameters
-/// - `$vec`: the mutable `Vec<String>` to append to
-/// - `$opt`: the `Option<String>` field to check
-/// - `$flag`: the flag to push if `$opt` is `Some`
-///
-/// ## Example
-/// ```rust
-/// let mut parts = vec![];
-/// let sort_key = Some("name".to_string());
-///
-/// sc_if_some_flag!(parts, sort_key, "--sort-key");
-///
-/// assert_eq!(parts, vec!["--sort-key", "name"]);
-/// ```
-///
-/// ## Expands To
-/// ```rust
-/// if let Some(value) = &sort_key {
-///     parts.push("--sort-key".to_string());
-///     parts.push(value.clone());
-/// }
-/// ```
-#[macro_export]
-macro_rules! sc_if_some_flag {
-    ($vec:expr, $opt:expr, $flag:expr) => {
-        if let Some(val) = &$opt {
-            $vec.push($flag.to_string());
-            $vec.push(val.clone());
-        }
-    };
-}
-

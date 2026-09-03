@@ -1,14 +1,18 @@
 [package]
 name = "simple_impl"
-version = "0.1.5"
-edition = "2024"
+version = "0.1.6"
+edition = "2021"
 
 license = "MIT OR Apache-2.0"
-description = "macros to make impls ergonomic, dense, and manageable"
+description = "Macros that make a command-line builder short: sc_* assemble the argument vector from a struct, builder_* write its setters."
+rust-version = "1.70"
+keywords = ["macro", "builder", "cli", "shell", "command"]
+categories = ["command-line-interface", "rust-patterns"]
+include = ["src/**", "Cargo.toml", "README.md", "LICENSE-MIT", "LICENSE-APACHE"]
 
-authors = ["James Hunt <jameshuntdevelopment@gmail.com>"]
+authors = ["James Hunt <james@1o.business>"]
 repository = "https://github.com/jameshuntt/simple_impl"
-readme = "readme.md"
+readme = "README.md"
 
 [features]
 default = []
