@@ -43,14 +43,18 @@
 //! assert_eq!(cmd.args(), ["kill", "--verbose", "-TERM", "12", "34"]);
 //! ```
 //!
-//! With the `derive` feature the same shapes are generated from attributes
-//! by `simple_impl_derive`, which expands to these macros.
+//! [`ShellCommand`] is the trait `#[derive(SimpleShell)]` (from
+//! `simple_impl_derive`, re-exported here under the `derive` feature)
+//! implements by default: `build()` gives the whole command line.
 
 #![forbid(unsafe_code)]
 #![deny(missing_docs)]
 
 #[macro_use]
 pub mod macros;
+
+mod command;
+pub use command::ShellCommand;
 
 #[cfg(feature = "derive")]
 pub use simple_impl_derive::*;

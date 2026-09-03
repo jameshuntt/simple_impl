@@ -1,6 +1,6 @@
 [package]
 name = "simple_impl"
-version = "0.1.6"
+version = "0.1.7"
 edition = "2021"
 
 license = "MIT OR Apache-2.0"
@@ -19,4 +19,4 @@ default = []
 derive = ["dep:simple_impl_derive"]
 
 [dependencies]
-simple_impl_derive = { version = "0.1.0", optional = true }
+simple_impl_derive = { version = "0.2.1", path = "../simple_impl_derive", optional = true }

@@ -66,3 +66,9 @@ struct, expanding to these macros.
 ## License
 
 MIT OR Apache-2.0.
+
+## The `ShellCommand` trait
+
+`simple_impl::ShellCommand` is what `#[derive(SimpleShell)]` implements when
+no `trait_path` is given: `build()` returns the whole command line, and
+`to_command()` wraps it in `sh -c`.
