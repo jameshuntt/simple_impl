@@ -456,3 +456,109 @@ macro_rules! builder_flag {
         }
     };
 }
+
+/// A builder for a program that takes a subcommand and free arguments:
+/// `git clone --mirror url dir`, `cargo new my_crate --lib`.
+///
+/// ```
+/// use simple_impl::{shell_command_builder, ShellCommand};
+///
+/// shell_command_builder!(GitBuilder, "git");
+///
+/// let git = GitBuilder::new("clone").args(["--mirror", "https://example.invalid/x.git", "x.git"]);
+/// assert_eq!(git.build(), "git clone --mirror https://example.invalid/x.git x.git");
+/// assert_eq!(GitBuilder::new("status").arg("--short").build(), "git status --short");
+/// ```
+#[macro_export]
+macro_rules! shell_command_builder {
+    ($name:ident, $base_cmd:expr) => {
+        #[derive(Debug, Clone, Default)]
+        pub struct $name {
+            pub subcommand: Option<String>,
+            pub args: Vec<String>,
+        }
+
+        impl $name {
+            pub fn new(subcommand: impl Into<String>) -> Self {
+                Self {
+                    subcommand: Some(subcommand.into()),
+                    ..Default::default()
+                }
+            }
+
+            pub fn arg(mut self, arg: impl Into<String>) -> Self {
+                self.args.push(arg.into());
+                self
+            }
+
+            pub fn args<I, S>(mut self, args: I) -> Self
+            where
+                I: IntoIterator<Item = S>,
+                S: Into<String>,
+            {
+                self.args.extend(args.into_iter().map(Into::into));
+                self
+            }
+        }
+
+        impl $crate::ShellCommand for $name {
+            fn build(&self) -> String {
+                let mut parts = vec![$base_cmd.to_string()];
+                if let Some(sub) = &self.subcommand {
+                    parts.push(sub.clone());
+                }
+                parts.extend(self.args.iter().cloned());
+                parts.join(" ")
+            }
+        }
+    };
+}
+
+/// A builder whose fields are all constructor arguments and whose command
+/// line is written out by hand in `build_parts`, a closure-shaped block that
+/// names the command and the parts vector.
+///
+/// ```
+/// use simple_impl::{define_shell_builder, ShellCommand};
+///
+/// define_shell_builder!(
+///     Tar,
+///     command = "tar",
+///     fields = { archive: String, verbose: bool },
+///     build_parts = |tar, parts| {
+///         parts.push(if tar.verbose { "-cvf" } else { "-cf" }.to_string());
+///         parts.push(tar.archive.clone());
+///     }
+/// );
+///
+/// assert_eq!(Tar::new("out.tar".into(), true).build(), "tar -cvf out.tar");
+/// ```
+#[macro_export]
+macro_rules! define_shell_builder {
+    (
+        $builder_name:ident,
+        command = $command_str:expr,
+        fields = { $( $fname:ident : $ftype:ty ),* $(,)? },
+        build_parts = |$this:ident, $parts:ident| $build:block
+    ) => {
+        #[derive(Debug, Default, Clone)]
+        pub struct $builder_name {
+            $( pub $fname: $ftype ),*
+        }
+
+        impl $builder_name {
+            pub fn new($( $fname: $ftype ),*) -> Self {
+                Self { $( $fname ),* }
+            }
+        }
+
+        impl $crate::ShellCommand for $builder_name {
+            fn build(&self) -> String {
+                let $this = self;
+                let mut $parts: Vec<String> = vec![$command_str.to_string()];
+                $build
+                $parts.join(" ")
+            }
+        }
+    };
+}

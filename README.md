@@ -72,3 +72,8 @@ MIT OR Apache-2.0.
 `simple_impl::ShellCommand` is what `#[derive(SimpleShell)]` implements when
 no `trait_path` is given: `build()` returns the whole command line, and
 `to_command()` wraps it in `sh -c`.
+
+Two whole-builder macros: `shell_command_builder!(GitBuilder, "git")` for a
+program that takes a subcommand and free arguments, and
+`define_shell_builder!` for a builder whose fields are constructor arguments
+and whose command line is written in a block.
