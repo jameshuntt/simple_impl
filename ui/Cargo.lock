@@ -139,7 +139,7 @@ dependencies = [
 
 [[package]]
 name = "simple_impl_attr_kit"
-version = "0.2.2"
+version = "0.2.3"
 dependencies = [
  "liaise_proc_macro",
  "proc-macro2",
@@ -160,7 +160,7 @@ dependencies = [
 
 [[package]]
 name = "simple_impl_derive"
-version = "0.2.4"
+version = "0.2.5"
 dependencies = [
  "liaise_proc_macro",
  "prettyplease",

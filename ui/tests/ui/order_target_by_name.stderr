@@ -1,0 +1,11 @@
+error: [SHELL2001] order target references unknown (or non-emitted) field: `nope`
+ --> tests/ui/order_target_by_name.rs:7:41
+  |
+7 |     #[shell(flag = "-a", order(before = nope))]
+  |                                         ^^^^
+
+error: [SHELL2001] order target references unknown (or non-emitted) field: `gone`
+  --> tests/ui/order_target_by_name.rs:10:5
+   |
+10 |     b: bool,
+   |     ^

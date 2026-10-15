@@ -124,7 +124,7 @@ dependencies = [
 name = "simple_impl"
 version = "0.1.10"
 dependencies = [
- "simple_impl_derive 0.2.4",
+ "simple_impl_derive 0.2.5",
 ]
 
 [[package]]
@@ -140,7 +140,7 @@ dependencies = [
 
 [[package]]
 name = "simple_impl_attr_kit"
-version = "0.2.2"
+version = "0.2.3"
 dependencies = [
  "liaise_proc_macro",
  "proc-macro2",
@@ -167,7 +167,7 @@ dependencies = [
  "liaise_proc_macro",
  "proc-macro2",
  "quote",
- "simple_impl_attr_kit 0.2.2",
+ "simple_impl_attr_kit 0.2.3",
  "syn 2.0.119",
 ]
 
@@ -189,13 +189,13 @@ dependencies = [
 
 [[package]]
 name = "simple_impl_derive"
-version = "0.2.4"
+version = "0.2.5"
 dependencies = [
  "liaise_proc_macro",
  "prettyplease",
  "proc-macro2",
  "quote",
- "simple_impl_attr_kit 0.2.2",
+ "simple_impl_attr_kit 0.2.3",
  "simple_impl_core 0.3.2",
  "simple_impl_quote_kit 0.3.2",
  "syn 2.0.119",
@@ -207,7 +207,7 @@ version = "0.0.0"
 dependencies = [
  "simple_impl",
  "simple_impl_derive 0.2.3",
- "simple_impl_derive 0.2.4",
+ "simple_impl_derive 0.2.5",
 ]
 
 [[package]]
@@ -229,7 +229,7 @@ dependencies = [
  "liaise_proc_macro",
  "proc-macro2",
  "quote",
- "simple_impl_attr_kit 0.2.2",
+ "simple_impl_attr_kit 0.2.3",
  "syn 2.0.119",
 ]
 

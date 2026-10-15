@@ -1,0 +1,5 @@
+error: unexpected end of input, expected an expression
+ --> tests/ui/expression_syntax_error.rs:7:31
+  |
+7 |     #[shell(arg_expr = self.n +, order = 1)]
+  |                               ^
