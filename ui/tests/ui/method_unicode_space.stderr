@@ -1,0 +1,12 @@
+error: [SHELL3007] #[builder(method = "...")] must be a Rust identifier
+ --> tests/ui/method_unicode_space.rs:5:5
+  |
+5 | /     #[builder(method = "foo\u{a0}")]
+6 | |     a: u8,
+  | |_________^
+
+error: unknown attribute key `bogus` known keys: default_expr, flag, init_only, init_required, into, method, not_in_default, opt, opt_into, push, required, set, set_into, skip, vec_into, vec_iter
+ --> tests/ui/method_unicode_space.rs:7:15
+  |
+7 |     #[builder(bogus)]
+  |               ^^^^^

@@ -1,0 +1,30 @@
+error: [SHELL3005] #[builder(opt)] and #[builder(opt_into)] require an Option<T> field
+ --> tests/ui/builder_kinds.rs:7:5
+  |
+7 |     a: u32,
+  |     ^
+
+error: [SHELL3006] #[builder(vec_into)] and #[builder(vec_iter)] require a Vec<T> field
+ --> tests/ui/builder_kinds.rs:9:5
+  |
+9 |     b: Option<u8>,
+  |     ^
+
+error: [SHELL3007] #[builder(method = "...")] must be a Rust identifier
+  --> tests/ui/builder_kinds.rs:10:5
+   |
+10 | /     #[builder(method = "set name")]
+11 | |     c: u8,
+   | |_________^
+
+error: [SHELL3004] #[builder(push)] requires a Vec<T> field
+  --> tests/ui/builder_kinds.rs:14:5
+   |
+14 |     d: String,
+   |     ^
+
+error: [SHELL1013] #[shell(flag/flag_off)] requires bool
+  --> tests/ui/builder_kinds.rs:14:5
+   |
+14 |     d: String,
+   |     ^

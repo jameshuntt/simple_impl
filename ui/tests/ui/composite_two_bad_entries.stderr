@@ -1,0 +1,11 @@
+error: [SHELL7004] CompositeSubCommand nested surfaces are not generated yet; this pass supports command entries: `add`
+ --> tests/ui/composite_two_bad_entries.rs:8:1
+  |
+8 | #[composite(surface = "add", ty = Add)]
+  | ^
+
+error: [SHELL7004] CompositeSubCommand nested surfaces are not generated yet; this pass supports command entries: `remove`
+ --> tests/ui/composite_two_bad_entries.rs:9:1
+  |
+9 | #[composite(surface = "remove", ty = Remove)]
+  | ^

@@ -1,0 +1,11 @@
+error: unknown attribute key `requre_order`; did you mean `require_order`? known keys: cmd, cmd_expr, require_order, trait_path
+ --> tests/ui/struct_attr_and_fields.rs:4:21
+  |
+4 | #[shell(cmd = "ls", requre_order)]
+  |                     ^^^^^^^^^^^^
+
+error: [SHELL1013] #[shell(flag/flag_off)] requires bool
+ --> tests/ui/struct_attr_and_fields.rs:7:5
+  |
+7 |     long: String,
+  |     ^^^^

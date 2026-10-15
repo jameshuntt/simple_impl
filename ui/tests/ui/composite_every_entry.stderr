@@ -1,0 +1,23 @@
+error: expected a string for `program`, got integer
+ --> tests/ui/composite_every_entry.rs:4:9
+  |
+4 | #[shell(program = 1)]
+  |         ^^^^^^^
+
+error: registry-style #[composite] requires ty = SomeType
+ --> tests/ui/composite_every_entry.rs:5:1
+  |
+5 | #[composite(command = "x")]
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: unknown attribute key `bogus` known keys: command, init, method, surface, ty
+ --> tests/ui/composite_every_entry.rs:6:13
+  |
+6 | #[composite(bogus)]
+  |             ^^^^^
+
+error: #[composite(...)] cannot contain both `command` and `surface`
+ --> tests/ui/composite_every_entry.rs:8:5
+  |
+8 |     #[composite(command, surface)]
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

@@ -1,0 +1,19 @@
+error: [SHELL3002] #[builder(init_required)] cannot be combined with default_expr
+ --> tests/ui/bad_builder_attrs.rs:6:5
+  |
+6 | /     #[builder(init_required, default_expr = "1")]
+7 | |     a: u8,
+  | |_________^
+
+error: [SHELL3004] #[builder(push)] requires a Vec<T> field
+ --> tests/ui/bad_builder_attrs.rs:9:5
+  |
+9 |     b: String,
+  |     ^
+
+error: [SHELL3003] #[builder(init_only)] cannot be combined with builder kind overrides
+  --> tests/ui/bad_builder_attrs.rs:10:5
+   |
+10 | /     #[builder(init_only, flag)]
+11 | |     c: bool,
+   | |___________^

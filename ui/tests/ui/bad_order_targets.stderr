@@ -1,0 +1,11 @@
+error: [SHELL2001] order target references unknown (or non-emitted) field: `nope`
+ --> tests/ui/bad_order_targets.rs:7:5
+  |
+7 |     a: bool,
+  |     ^
+
+error: [SHELL2001] order target references unknown (or non-emitted) field: `gone`
+ --> tests/ui/bad_order_targets.rs:9:5
+  |
+9 |     b: bool,
+  |     ^

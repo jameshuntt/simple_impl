@@ -1,0 +1,23 @@
+error: expected a string for `flag`, got integer
+ --> tests/ui/subcommand_every_field.rs:7:11
+  |
+7 |     #[arg(flag = 1)]
+  |           ^^^^
+
+error: [SHELL5004] SimpleSubCommand fields require #[arg(flag = "...")], #[arg(kv = "...")], or #[arg(positional)]
+ --> tests/ui/subcommand_every_field.rs:9:5
+  |
+9 |     b: u8,
+  |     ^^^^^
+
+error: unknown attribute key `nope` known keys: init_required, into, method
+  --> tests/ui/subcommand_every_field.rs:11:15
+   |
+11 |     #[builder(nope)]
+   |               ^^^^
+
+error: unknown attribute key `bad` known keys: dry_run_default, iam_scope, path_role, requires_sudo, sensitive
+ --> tests/ui/subcommand_every_field.rs:5:17
+  |
+5 | #[xccute_policy(bad)]
+  |                 ^^^

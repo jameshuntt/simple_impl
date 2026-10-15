@@ -1,0 +1,11 @@
+error: unknown attribute key `flagg`; did you mean `flag`? known keys: arg, arg_clone, arg_display, arg_expr, arg_join_opt, count_flag, eq, flag, flag_off, fmt, join, kv, mode, multi_arg_flag, multi_opt_kv, multi_opt_prefix, opt_eq, opt_expr, opt_kv, opt_prefix, order, positional, prefix, sep, subcommand
+ --> tests/ui/unknown_keys.rs:6:13
+  |
+6 |     #[shell(flagg = "-a", ordr = 1)]
+  |             ^^^^^
+
+error: unknown attribute key `ordr`; did you mean `order`? known keys: arg, arg_clone, arg_display, arg_expr, arg_join_opt, count_flag, eq, flag, flag_off, fmt, join, kv, mode, multi_arg_flag, multi_opt_kv, multi_opt_prefix, opt_eq, opt_expr, opt_kv, opt_prefix, order, positional, prefix, sep, subcommand
+ --> tests/ui/unknown_keys.rs:6:27
+  |
+6 |     #[shell(flagg = "-a", ordr = 1)]
+  |                           ^^^^

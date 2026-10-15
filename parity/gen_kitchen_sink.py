@@ -1,0 +1,100 @@
+# Writes tests/kitchen_sink.rs (run from this parity/ folder): random kitchen-sink structs, each derived by the
+# previous release (old_derive) and by this one, filled with random values; both must
+# build the same command. Seeded; rerun to regenerate.
+import random
+rng = random.Random(20261014)
+GOOD = [
+    ("f1", 'flag = "-a"', "", "bool"), ("f2", 'flag_off = "--no-b"', "", "bool"),
+    ("f3", 'flag = "--on", flag_off = "--off"', "", "bool"),
+    ("cnt", 'count_flag = "v"', '#[builder(default_expr = "0")]', "u8"),
+    ("okv", 'opt_kv = "--name"', '#[builder(method = "named")]', "Option<String>"),
+    ("opx", 'opt_prefix = "-O"', "", "Option<u32>"), ("oeq", 'opt_eq = "--mode"', "", "Option<String>"),
+    ("kv", 'kv = "-k"', "#[builder(into)]", "String"), ("kvo", 'kv = "-m"', "", "Option<u16>"),
+    ("pfx", 'prefix = "-p"', "", "String"), ("eqf", 'eq = "--e"', "", "u8"),
+    ("mk", 'multi_opt_kv = "-e"', "", "Vec<String>"), ("mko", 'multi_opt_kv = "-f"', "", "Option<Vec<String>>"),
+    ("mkj", 'multi_opt_kv = "-j", join = ","', "", "Vec<String>"), ("mp", 'multi_opt_prefix = "-I"', "", "Vec<String>"),
+    ("mpo", 'multi_opt_prefix = "-L"', "", "Option<Vec<String>>"), ("ma", 'multi_arg_flag = "--files"', "#[builder(push)]", "Vec<String>"),
+    ("maj", 'multi_arg_flag = "--j", join = ":"', "", "Option<Vec<String>>"),
+    ("pos", "positional", "#[builder(init_required)]", "String"), ("pso", "positional", "", "Option<String>"),
+    ("psv", "positional", "", "Vec<String>"), ("psj", 'positional, join = ","', "", "Vec<u32>"),
+    ("acl", "arg_clone", "", "String"), ("adi", "arg_display", "", "u64"),
+    ("aex", 'arg_expr = "self.adi * 2"', "#[builder(skip)]", "u8"),
+    ("oex", 'opt_expr = "self.pso.as_ref()"', "", "u8"),
+    ("host", 'arg_join_opt = "port", sep = ":"', "", "String"), ("port", "", "", "Option<u16>"),
+    ("hdr", 'kv = "-H", fmt = "\'{}\'"', "", "String"), ("pfm", 'positional, fmt = "<{}>"', "", "String"),
+    ("sub", "subcommand", "", "String"), ("md", "mode", "", "Mode"), ("omd", "mode", "", "Option<Mode>"),
+    ("imp", "", "#[builder(init_required)]", "u32"), ("plain", "", "#[builder(required)]", "u8"),
+]
+KEEP = {"port", "pso", "adi"}
+WORDS = ['"a"', '"b c"', '""', '"x-y"', '"z"']
+def val(ty):
+    if ty == "bool": return rng.choice(["true", "false"])
+    if ty in ("u8", "u16", "u32", "u64"): return str(rng.randrange(0, 5))
+    if ty == "String": return rng.choice(WORDS) + ".to_string()"
+    if ty == "Mode": return rng.choice(["Mode::Json", "Mode::Raw", "Mode::Quiet"])
+    if ty.startswith("Option<"):
+        inner = ty[7:-1]
+        return "None" if rng.random() < 0.35 else f"Some({val(inner)})"
+    if ty.startswith("Vec<"):
+        inner = ty[4:-1]
+        return "vec![" + ", ".join(val(inner) for _ in range(rng.randrange(0, 4))) + "]"
+    raise ValueError(ty)
+
+def emitted(f): return f[1] != "" or f[0] == "imp"
+
+cases = []
+for n in range(60):
+    fields = [f for f in GOOD if f[0] in KEEP or rng.random() > 0.2]
+    rng.shuffle(fields)
+    require = rng.random() < 0.25
+    rank = {f[0]: rng.random() for f in fields}
+    ems = [f[0] for f in fields if emitted(f)]
+    body = []
+    for name, shell, builder, ty in fields:
+        parts = [shell] if shell else []
+        if emitted((name, shell, builder, ty)):
+            r = rng.randrange(6)
+            others = [t for t in ems if t != name]
+            if r == 0: parts.append(f"order = {rng.randrange(-50, 5000)}")
+            elif r == 1: parts.append('order = "first"')
+            elif r == 2: parts.append('order = "last"')
+            elif r == 3 and others:
+                t = rng.choice(others)
+                parts.append(f'order = "{"before" if rank[name] < rank[t] else "after"}:{t}"')
+            elif require: parts.append(f"order = {rng.randrange(0, 100)}")
+        shell_attr = f"#[shell({', '.join(parts)})]" if parts else ""
+        body.append(f"        {builder} {shell_attr} pub {name}: {ty},")
+    sattr = '#[shell(cmd = "tool", require_order)]' if require else rng.choice(['#[shell(cmd = "tool")]', '#[shell(cmd_expr = "\\"tool\\"")]'])
+    values = []
+    for _ in range(4):
+        values.append("K { " + ", ".join(f"{f[0]}: {val(f[3])}" for f in fields) + " }")
+    cases.append((sattr, "\n".join(body), values))
+
+def side(derive_crate, sattr, body, values):
+    vals = ",\n                ".join(values)
+    return f"""
+            use simple_impl::ShellCommand;
+            #[derive({derive_crate}::SimpleShellMode, Clone, Copy, Default)]
+            pub enum Mode {{ #[shell(flag = "--json")] Json, #[shell(flag = "--raw")] Raw, #[default] Quiet }}
+            #[derive({derive_crate}::SimpleImpl)]
+            {sattr}
+            pub struct K {{
+{body}
+            }}
+            pub fn run() -> Vec<String> {{
+                vec![
+                {vals}
+                ].into_iter().map(|k: K| k.build()).collect()
+            }}"""
+
+out = ["//! Generated by parity/gen_kitchen_sink.py: random kitchen-sink structs derived by the",
+       "//! previous release and by this one; every value must build the same command.",
+       "#![allow(dead_code, unused_imports)]", ""]
+for i, (sattr, body, values) in enumerate(cases):
+    out.append(f"mod sink_{i:02} {{")
+    out.append(f"    mod old {{{side('old_derive', sattr, body, values)}\n    }}")
+    out.append(f"    mod new {{{side('simple_impl_derive', sattr, body, values)}\n    }}")
+    out.append("    #[test] fn same_commands() { let (o, n) = (old::run(), new::run()); assert_eq!(o, n); println!(\"{n:#?}\"); }")
+    out.append("}")
+open("tests/kitchen_sink.rs", "w").write("\n".join(out) + "\n")
+print(len(cases), "structs,", sum(len(c[2]) for c in cases), "values")

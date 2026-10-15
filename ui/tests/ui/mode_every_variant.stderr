@@ -1,0 +1,17 @@
+error: [SHELL4002] SimpleShellMode only supports unit variants (e.g. Json, Xml, Raw)
+ --> tests/ui/mode_every_variant.rs:6:5
+  |
+6 |     Raw(u8),
+  |     ^^^
+
+error: expected a string for `flag`, got integer
+ --> tests/ui/mode_every_variant.rs:7:13
+  |
+7 |     #[shell(flag = 1)]
+  |             ^^^^
+
+error: [SHELL4002] SimpleShellMode only supports unit variants (e.g. Json, Xml, Raw)
+ --> tests/ui/mode_every_variant.rs:9:5
+  |
+9 |     Csv { x: u8 },
+  |     ^^^

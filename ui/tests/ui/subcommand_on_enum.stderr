@@ -1,0 +1,11 @@
+error: [SHELL5002] SimpleSubCommand can only be derived for structs
+  --> tests/ui/subcommand_on_enum.rs:5:1
+   |
+ 5 | / #[subcommand(segment = "add")]
+ 6 | | #[one_of("a", "b")]
+ 7 | | pub enum Add {
+ 8 | |     V {
+...  |
+14 | |     },
+15 | | }
+   | |_^

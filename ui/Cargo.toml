@@ -1,0 +1,13 @@
+[package]
+name = "simple_impl_ui"
+version = "0.0.0"
+edition = "2021"
+publish = false
+description = "Compiler-output tests for simple_impl's derives: broken structs and the exact errors the compiler shows, and structs that must compile. Never published, so simple_impl itself carries no test-only dependencies."
+license = "MIT OR Apache-2.0"
+
+[dev-dependencies]
+simple_impl = { path = "..", features = ["derive"] }
+trybuild = "1"
+# the code SimpleSubCommand and CompositeSubCommand generate uses it
+xccute_contract = { path = "../../xccute_contract" }

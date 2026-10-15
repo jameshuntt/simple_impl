@@ -1,0 +1,23 @@
+error: [SHELL3004] #[builder(push)] requires a Vec<T> field
+ --> tests/ui/every_stage_at_once.rs:7:5
+  |
+7 |     a: String,
+  |     ^
+
+error: unknown attribute key `bogus` known keys: arg, arg_clone, arg_display, arg_expr, arg_join_opt, count_flag, eq, flag, flag_off, fmt, join, kv, mode, multi_arg_flag, multi_opt_kv, multi_opt_prefix, opt_eq, opt_expr, opt_kv, opt_prefix, order, positional, prefix, sep, subcommand
+  --> tests/ui/every_stage_at_once.rs:12:26
+   |
+12 |     #[shell(flag = "-d", bogus)]
+   |                          ^^^^^
+
+error: [SHELL1013] #[shell(flag/flag_off)] requires bool
+ --> tests/ui/every_stage_at_once.rs:9:5
+  |
+9 |     b: u8,
+  |     ^
+
+error: [SHELL2001] order target references unknown (or non-emitted) field: `nobody`
+  --> tests/ui/every_stage_at_once.rs:11:5
+   |
+11 |     c: bool,
+   |     ^

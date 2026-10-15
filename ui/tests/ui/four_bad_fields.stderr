@@ -1,0 +1,23 @@
+error: [SHELL1013] #[shell(flag/flag_off)] requires bool
+ --> tests/ui/four_bad_fields.rs:7:5
+  |
+7 |     long: String,
+  |     ^^^^
+
+error: [SHELL1014] #[shell(count_flag = "...")] requires u8/u16/u32/u64/usize
+ --> tests/ui/four_bad_fields.rs:9:5
+  |
+9 |     verbose: String,
+  |     ^^^^^^^
+
+error: [SHELL1010] #[shell(opt_kv = "...")] requires Option<T>
+  --> tests/ui/four_bad_fields.rs:11:5
+   |
+11 |     color: String,
+   |     ^^^^^
+
+error: [SHELL1002] #[shell(sep = "...")] is only valid with #[shell(arg_join_opt = "other_field")]
+  --> tests/ui/four_bad_fields.rs:13:5
+   |
+13 |     path: String,
+   |     ^^^^

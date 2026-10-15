@@ -1,0 +1,15 @@
+error: validation rule references unknown field `a`: in #[one_of("a", "k")]
+ --> tests/ui/rules_name_missing_field.rs:3:10
+  |
+3 | #[derive(SimpleSubCommand)]
+  |          ^^^^^^^^^^^^^^^^
+  |
+  = note: this error originates in the derive macro `SimpleSubCommand` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error: validation rule references unknown field `a`: in #[requires] on `r`
+ --> tests/ui/rules_name_missing_field.rs:3:10
+  |
+3 | #[derive(SimpleSubCommand)]
+  |          ^^^^^^^^^^^^^^^^
+  |
+  = note: this error originates in the derive macro `SimpleSubCommand` (in Nightly builds, run with -Z macro-backtrace for more info)
