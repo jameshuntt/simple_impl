@@ -1,11 +1,11 @@
-error: [SHELL7004] CompositeSubCommand nested surfaces are not generated yet; this pass supports command entries: `add`
+error: [SHELL7005] a surface inside a CompositeSubCommand takes no init args; its commands take theirs: `add`
  --> tests/ui/composite_two_bad_entries.rs:8:1
   |
-8 | #[composite(surface = "add", ty = Add)]
+8 | #[composite(surface = "add", ty = Add, init = "name")]
   | ^
 
-error: [SHELL7004] CompositeSubCommand nested surfaces are not generated yet; this pass supports command entries: `remove`
+error: [SHELL7005] a surface inside a CompositeSubCommand takes no init args; its commands take theirs: `remove`
  --> tests/ui/composite_two_bad_entries.rs:9:1
   |
-9 | #[composite(surface = "remove", ty = Remove)]
+9 | #[composite(surface = "remove", ty = Remove, init = "name")]
   | ^

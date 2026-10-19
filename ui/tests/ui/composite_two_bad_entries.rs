@@ -5,8 +5,8 @@ pub struct Remove;
 
 #[derive(CompositeSubCommand)]
 #[subcommand(segment = "remote")]
-#[composite(surface = "add", ty = Add)]
-#[composite(surface = "remove", ty = Remove)]
+#[composite(surface = "add", ty = Add, init = "name")]
+#[composite(surface = "remove", ty = Remove, init = "name")]
 pub struct Remote;
 
 fn main() {}

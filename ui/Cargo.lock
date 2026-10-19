@@ -132,7 +132,7 @@ dependencies = [
 
 [[package]]
 name = "simple_impl"
-version = "0.1.10"
+version = "0.1.11"
 dependencies = [
  "simple_impl_derive",
 ]
@@ -160,7 +160,7 @@ dependencies = [
 
 [[package]]
 name = "simple_impl_derive"
-version = "0.2.5"
+version = "0.2.7"
 dependencies = [
  "liaise_proc_macro",
  "prettyplease",
@@ -170,11 +170,12 @@ dependencies = [
  "simple_impl_core",
  "simple_impl_quote_kit",
  "syn 2.0.119",
+ "xccute_contract",
 ]
 
 [[package]]
 name = "simple_impl_quote_kit"
-version = "0.3.2"
+version = "0.3.4"
 dependencies = [
  "liaise_proc_macro",
  "proc-macro2",
@@ -321,7 +322,7 @@ checksum = "23b97319f7b8343df12cc98938e5c3eb436064524c8d2b4e30a1d3a36eecdf81"
 
 [[package]]
 name = "xccute_contract"
-version = "0.1.2"
+version = "0.1.3"
 
 [[package]]
 name = "zmij"
