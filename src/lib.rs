@@ -43,6 +43,18 @@
 //! assert_eq!(cmd.args(), ["kill", "--verbose", "-TERM", "12", "34"]);
 //! ```
 //!
+//! The toolkit adds 100 more `macro_rules!` helpers at the root, for the
+//! small bodies and one-line methods a derive doesn't cover: pure checks
+//! ([`all!`], [`exactly_one!`], [`implies!`]), guards that return early
+//! ([`guard!`], [`ensure!`] and the `ensure_*` family), early flow
+//! ([`require_some!`], [`some_or_continue!`]), conditional mutation
+//! ([`push_if!`], [`push_unique!`]), [`simple_method!`] for any
+//! one-expression method, accessors ([`getter!`], [`getter_option_deref!`]),
+//! setters and consuming builders ([`setter!`], [`with_field!`],
+//! [`with_unique_push!`]), and constructors and trait boilerplate
+//! ([`newtype_constructor!`], [`impl_from_variant!`],
+//! [`forward_trait_method!`]).
+//!
 //! [`ShellCommand`] is the trait `#[derive(SimpleShell)]` (from
 //! `simple_impl_derive`, re-exported here under the `derive` feature)
 //! implements by default: `build()` gives the whole command line.
