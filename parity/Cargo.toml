@@ -11,4 +11,4 @@ license = "MIT OR Apache-2.0"
 simple_impl = { path = "..", features = ["derive"] }
 simple_impl_derive = { path = "../../simple_impl_derive" }
 # the previous release; move this forward after each release
-old_derive = { package = "simple_impl_derive", version = "=0.2.3" }
+old_derive = { package = "simple_impl_derive", version = "=0.2.5" }

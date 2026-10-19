@@ -1,4 +1,4 @@
-//! The same struct derived by the previous release (0.2.3) and by this one; every
+//! The same struct derived by the previous release (0.2.5) and by this one; every
 //! value must build the same command.
 
 macro_rules! parity {

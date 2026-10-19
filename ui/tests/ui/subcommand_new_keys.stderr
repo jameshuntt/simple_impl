@@ -1,0 +1,37 @@
+error: `segment` cannot be used with `no_segment`
+ --> tests/ui/subcommand_new_keys.rs:5:14
+  |
+5 | #[subcommand(segment = "s", no_segment)]
+  |              ^^^^^^^
+
+error: [SHELL5007] #[builder(init_required)] takes one value; a Vec field is filled by its setter
+  --> tests/ui/subcommand_new_keys.rs:10:5
+   |
+10 | /     #[builder(init_required)]
+11 | |     #[arg(positional)]
+12 | |     list: Vec<OsString>,
+   | |_______________________^
+
+error: [SHELL5008] #[arg(min = N)] counts a Vec field's values; this field is not a Vec
+  --> tests/ui/subcommand_new_keys.rs:13:23
+   |
+13 |     #[arg(positional, min = 2)]
+   |                       ^^^
+
+error: `flag` cannot be used with `each`
+  --> tests/ui/subcommand_new_keys.rs:15:11
+   |
+15 |     #[arg(flag = "-f", each = check)]
+   |           ^^^^
+
+error: [SHELL5011] an exit status is named once; this code is already named: `3`
+ --> tests/ui/subcommand_new_keys.rs:7:15
+  |
+7 | #[exit_status(code = 3, word = "b")]
+  |               ^^^^
+
+error: [SHELL5010] #[exit_status(code = N)] is an exit status, an i32: `3000000000`
+ --> tests/ui/subcommand_new_keys.rs:8:15
+  |
+8 | #[exit_status(code = 3000000000, word = "big")]
+  |               ^^^^
