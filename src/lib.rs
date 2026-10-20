@@ -43,7 +43,7 @@
 //! assert_eq!(cmd.args(), ["kill", "--verbose", "-TERM", "12", "34"]);
 //! ```
 //!
-//! The toolkit adds 100 more `macro_rules!` helpers at the root, for the
+//! The toolkit adds 107 more `macro_rules!` helpers at the root, for the
 //! small bodies and one-line methods a derive doesn't cover: pure checks
 //! ([`all!`], [`exactly_one!`], [`implies!`]), guards that return early
 //! ([`guard!`], [`ensure!`] and the `ensure_*` family), early flow
@@ -53,7 +53,10 @@
 //! setters and consuming builders ([`setter!`], [`with_field!`],
 //! [`with_unique_push!`]), and constructors and trait boilerplate
 //! ([`newtype_constructor!`], [`impl_from_variant!`],
-//! [`forward_trait_method!`]).
+//! [`forward_trait_method!`]). Seven come from a reading of the kit:
+//! [`ensure_valid!`], [`require_ok_into!`], [`require_some_into!`],
+//! [`ok_or_else_return!`], [`return_if_err!`], and values chosen by a
+//! condition or a pattern, [`if_else!`] and [`table!`].
 //!
 //! [`ShellCommand`] is the trait `#[derive(SimpleShell)]` (from
 //! `simple_impl_derive`, re-exported here under the `derive` feature)

@@ -2,8 +2,9 @@
 //! methods that are left when a derive doesn't fit. Pure checks, guards
 //! that return early, early flow out of a function or a loop, conditional
 //! pushes and inserts, [`simple_method!`](crate::simple_method!) for any one-expression method,
-//! accessors, setters and consuming `with_*` builders, and constructors and
-//! one-line trait impls. All of them are exported at the crate root.
+//! accessors, setters and consuming `with_*` builders, constructors and
+//! one-line trait impls, and values chosen by a condition or a pattern. All
+//! of them are exported at the crate root.
 
 // -----------------------------------------------------------------------------
 // Pure boolean / validation expressions
@@ -591,6 +592,52 @@ macro_rules! ensure_excludes {
     };
 }
 
+/// Call the value's `validate()` and, on `Err`, return the error from the
+/// enclosing function through `?`, which converts it with `From` into the
+/// function's error type. With a second argument the error goes through it
+/// first, the way [`require_ok!`](crate::require_ok!)'s `map_error` does.
+/// `ensure_valid!(value);` writes `value.validate()?;`, and
+/// `ensure_valid!(value, map_error);` writes
+/// `value.validate().map_err(map_error)?;`.
+///
+/// The kit's patterns reading found `x.validate()?;` written out 776 times
+/// in 53 crates, and `x.validate().map_err(f)?;` 512 times in 30.
+///
+/// ```
+/// use simple_impl::ensure_valid;
+///
+/// struct Port(u16);
+///
+/// impl Port {
+///     fn validate(&self) -> Result<(), String> {
+///         if self.0 == 0 { Err("port 0 is not a port".to_string()) } else { Ok(()) }
+///     }
+/// }
+///
+/// fn listen(port: Port) -> Result<u16, String> {
+///     ensure_valid!(port);
+///     Ok(port.0)
+/// }
+///
+/// fn listen_on(port: Port) -> Result<u16, String> {
+///     ensure_valid!(port, |error| format!("listen: {error}"));
+///     Ok(port.0)
+/// }
+///
+/// assert_eq!(listen(Port(22)), Ok(22));
+/// assert_eq!(listen(Port(0)), Err("port 0 is not a port".to_string()));
+/// assert_eq!(listen_on(Port(0)), Err("listen: port 0 is not a port".to_string()));
+/// ```
+#[macro_export]
+macro_rules! ensure_valid {
+    ($value:expr $(,)?) => {
+        $value.validate()?
+    };
+    ($value:expr, $map_error:expr $(,)?) => {
+        $value.validate().map_err($map_error)?
+    };
+}
+
 // -----------------------------------------------------------------------------
 // Extraction and early control flow
 // -----------------------------------------------------------------------------
@@ -854,6 +901,145 @@ macro_rules! some_or_break {
         match $option {
             ::core::option::Option::Some(value) => value,
             ::core::option::Option::None => break,
+        }
+    };
+}
+
+/// The value inside an `Ok`, or return `Err(map_error(error))` from the
+/// enclosing function through `?`. The same as
+/// [`require_ok!`](crate::require_ok!), except that `?` converts the mapped
+/// error with `From` into the function's error type. It writes
+/// `result.map_err(map_error)?`, so `let x = require_ok_into!(a, f);` is
+/// `let x = a.map_err(f)?;`, `let mut` and a type on the binding stay
+/// outside the call as they are, and the statement
+/// `require_ok_into!(a, f);` is `a.map_err(f)?;`.
+///
+/// The kit's patterns reading found `let x = a.map_err(f)?;` written out
+/// 1,756 times in 182 crates, with `let mut` 214 times in 79, with a type on
+/// the binding 321 times in 78, and `a.map_err(f)?;` as a statement 1,040
+/// times in 136.
+///
+/// ```
+/// use simple_impl::require_ok_into;
+/// use std::error::Error;
+///
+/// fn port(text: &str) -> Result<u16, Box<dyn Error>> {
+///     let port: u16 = require_ok_into!(text.parse::<u16>(), |e| format!("port {text}: {e}"));
+///     Ok(port)
+/// }
+///
+/// fn check(text: &str) -> Result<(), String> {
+///     require_ok_into!(text.parse::<u16>(), |e| e.to_string());
+///     Ok(())
+/// }
+///
+/// assert_eq!(port("22").unwrap(), 22);
+/// assert_eq!(port("http").unwrap_err().to_string(), "port http: invalid digit found in string");
+/// assert_eq!(check("http"), Err("invalid digit found in string".to_string()));
+/// ```
+#[macro_export]
+macro_rules! require_ok_into {
+    ($result:expr, $map_error:expr $(,)?) => {
+        $result.map_err($map_error)?
+    };
+}
+
+/// The value inside a `Some`, or return `Err(error)` from the enclosing
+/// function through `?`. The same as
+/// [`require_some!`](crate::require_some!), except that `?` converts the
+/// error with `From` into the function's error type. Two forms:
+/// `require_some_into!(option, error)` writes `option.ok_or(error)?`, which
+/// builds the error before it looks at the option, as `ok_or` does, and
+/// `require_some_into!(option, || error)` writes
+/// `option.ok_or_else(|| error)?`, which builds it only on `None`.
+///
+/// The kit's patterns reading found `let x = o.ok_or_else(f)?;` written out
+/// 937 times in 131 crates, and `let x = o.ok_or(e)?;` 303 times in 74.
+///
+/// ```
+/// use simple_impl::require_some_into;
+/// use std::error::Error;
+///
+/// fn first_arg(args: &[&str]) -> Result<String, Box<dyn Error>> {
+///     let first = require_some_into!(args.first(), "no arguments");
+///     Ok(first.to_string())
+/// }
+///
+/// fn second_arg(args: &[&str]) -> Result<String, String> {
+///     let second = require_some_into!(args.get(1), || format!("{} has no argument", args[0]));
+///     Ok(second.to_string())
+/// }
+///
+/// assert_eq!(first_arg(&["ls", "-l"]).unwrap(), "ls");
+/// assert_eq!(first_arg(&[]).unwrap_err().to_string(), "no arguments");
+/// assert_eq!(second_arg(&["ls", "-l"]), Ok("-l".to_string()));
+/// assert_eq!(second_arg(&["ls"]), Err("ls has no argument".to_string()));
+/// ```
+#[macro_export]
+macro_rules! require_some_into {
+    ($option:expr, || $error:expr $(,)?) => {
+        $option.ok_or_else(|| $error)?
+    };
+    ($option:expr, $error:expr $(,)?) => {
+        $option.ok_or($error)?
+    };
+}
+
+/// The value inside an `Ok`, or return `value` from the enclosing function
+/// on `Err`, with the error bound under the name before `=>` so `value` can
+/// use it. [`ok_or_return!`](crate::ok_or_return!) is the form that drops
+/// the error. It writes
+/// `match result { Ok(value) => value, Err(error) => return value, }`.
+///
+/// The kit's patterns reading found
+/// `let x = match r { Ok(v) => v, Err(e) => return y };` written out 222
+/// times in 30 crates.
+///
+/// ```
+/// use simple_impl::ok_or_else_return;
+///
+/// fn status(text: &str) -> String {
+///     let code = ok_or_else_return!(text.parse::<u16>(), error => format!("400 {error}"));
+///     format!("{code} ok")
+/// }
+///
+/// assert_eq!(status("200"), "200 ok");
+/// assert_eq!(status("x"), "400 invalid digit found in string");
+/// ```
+#[macro_export]
+macro_rules! ok_or_else_return {
+    ($result:expr, $error:ident => $return_value:expr $(,)?) => {
+        match $result {
+            ::core::result::Result::Ok(value) => value,
+            ::core::result::Result::Err($error) => return $return_value,
+        }
+    };
+}
+
+/// Return `value` from the enclosing function when the result is an `Err`,
+/// with the error bound under the name before `=>` so `value` can use it.
+/// The `Ok` value is dropped. It writes
+/// `if let Err(error) = result { return value; }`.
+///
+/// The kit's patterns reading found `if let Err(e) = a { return y; }`
+/// written out 144 times in 18 crates.
+///
+/// ```
+/// use simple_impl::return_if_err;
+///
+/// fn answer(ask: &str) -> String {
+///     return_if_err!(ask.parse::<u8>(), refused => format!("refused: {refused}"));
+///     "admitted".to_string()
+/// }
+///
+/// assert_eq!(answer("7"), "admitted");
+/// assert_eq!(answer("700"), "refused: number too large to fit in target type");
+/// ```
+#[macro_export]
+macro_rules! return_if_err {
+    ($result:expr, $error:ident => $return_value:expr $(,)?) => {
+        if let ::core::result::Result::Err($error) = $result {
+            return $return_value;
         }
     };
 }
@@ -2471,5 +2657,72 @@ macro_rules! forward_trait_method {
     ($(#[$meta:meta])* fn $name:ident(&self, $arg:ident: $ty:ty) -> $ret:ty => $target:path $(;)?) => {
         $(#[$meta])*
         fn $name(&self, $arg: $ty) -> $ret { $target(self, $arg) }
+    };
+}
+
+// -----------------------------------------------------------------------------
+// Values chosen by a condition or by a pattern
+// -----------------------------------------------------------------------------
+
+/// `then` when the condition is `true`, `otherwise` when it is `false`.
+/// Only the one chosen is evaluated. It writes
+/// `if condition { then } else { otherwise }`.
+///
+/// The kit's patterns reading found `let x = if c { a } else { b };`
+/// written out 688 times in 111 crates, and `if c { a } else { b }` as a
+/// function's value 332 times in 80.
+///
+/// ```
+/// use simple_impl::if_else;
+///
+/// fn status(ok: bool) -> &'static str {
+///     if_else!(ok => "ok", "error")
+/// }
+///
+/// let width = if_else!(status(true).len() > 4 => 80, 120);
+/// assert_eq!(status(false), "error");
+/// assert_eq!(width, 120);
+/// ```
+#[macro_export]
+macro_rules! if_else {
+    ($condition:expr => $then:expr, $otherwise:expr $(,)?) => {
+        if $condition { $then } else { $otherwise }
+    };
+}
+
+/// A table from patterns to values: the value of the first entry whose
+/// pattern matches. The value comes first, then `;`, then
+/// `pattern => entry` pairs; one entry can take several patterns joined
+/// with `|`, as in a `match`. It writes
+/// `match value { pattern => entry, ... }`.
+///
+/// The kit's patterns reading found `match self` with every arm a value
+/// written out with three arms 134 times in 47 crates, and with four arms
+/// 115 times in 40.
+///
+/// ```
+/// use simple_impl::table;
+///
+/// enum Signal { Term, Kill, Hup, Int }
+///
+/// impl Signal {
+///     fn number(&self) -> u8 {
+///         table!(self; Signal::Term => 15, Signal::Kill => 9, Signal::Hup => 1, Signal::Int => 2)
+///     }
+///     fn stops(&self) -> bool {
+///         table!(self; Signal::Term | Signal::Kill | Signal::Int => true, Signal::Hup => false)
+///     }
+/// }
+///
+/// assert_eq!(Signal::Kill.number(), 9);
+/// assert!(!Signal::Hup.stops());
+/// assert!(Signal::Term.stops());
+/// ```
+#[macro_export]
+macro_rules! table {
+    ($value:expr; $($($pattern:pat_param)|+ => $entry:expr),+ $(,)?) => {
+        match $value {
+            $($($pattern)|+ => $entry,)+
+        }
     };
 }

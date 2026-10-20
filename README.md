@@ -65,10 +65,14 @@ struct, expanding to these macros.
 
 ## The toolkit
 
-100 more `macro_rules!` helpers, also exported at the root, for the small
+107 more `macro_rules!` helpers, also exported at the root, for the small
 bodies and one-line methods that are left when a derive doesn't fit. They
-come from shapes that repeat across the jameshuntt repositories. Each family
-below with one example; every macro's documentation has its own.
+come from shapes that repeat across the jameshuntt repositories. The seven
+added in 0.1.12 (`ensure_valid!`, `require_ok_into!`, `require_some_into!`,
+`ok_or_else_return!`, `return_if_err!`, `if_else!`, `table!`) come from a
+reading of the kit, where each shape is written out by hand hundreds of
+times; each one's documentation says how many. Each family below with one
+example; every macro's documentation has its own.
 
 **Pure checks (10)**: `count_true!`, `all!`, `any!`, `exactly_one!`,
 `at_most_one!`, `implies!`, `excludes!`, `in_range!`, `nonempty!`,
@@ -82,12 +86,14 @@ assert!(exactly_one!(file, url));
 assert!(implies!(tls => cert.is_some()));
 ```
 
-**Result / guard layer (20)**: `guard!`, `ensure!`, `bail!`, `guard_with!`,
+**Result / guard layer (21)**: `guard!`, `ensure!`, `bail!`, `guard_with!`,
 `ensure_with!`, `bail_with!`, `ensure_eq!`, `ensure_ne!`, `ensure_nonempty!`,
 `ensure_empty!`, `ensure_len!`, `ensure_min_len!`, `ensure_max_len!`,
 `ensure_range!`, `ensure_all!`, `ensure_any!`, `ensure_exactly_one!`,
-`ensure_at_most_one!`, `ensure_implies!`, `ensure_excludes!`. `guard!`
-returns any value; `ensure!` and the `ensure_*` family return `Err(...)`.
+`ensure_at_most_one!`, `ensure_implies!`, `ensure_excludes!`,
+`ensure_valid!`. `guard!` returns any value; `ensure!` and the `ensure_*`
+family return `Err(...)`. `ensure_valid!(x)` is `x.validate()?`, and
+`ensure_valid!(x, f)` is `x.validate().map_err(f)?`.
 
 ```rust
 use simple_impl::{ensure, ensure_range};
@@ -101,10 +107,15 @@ assert_eq!(qos(1, true), Ok(1));
 assert_eq!(qos(3, false), Err("qos is 0, 1 or 2"));
 ```
 
-**Extraction / early flow (11)**: `require_some!`, `require_ok!`,
+**Extraction / early flow (15)**: `require_some!`, `require_ok!`,
 `some_or_return!`, `ok_or_return!`, `return_if!`, `return_unless!`,
 `none_if!`, `break_if!`, `continue_if!`, `some_or_continue!`,
-`some_or_break!`. Where `?` already says it, use `?`.
+`some_or_break!`, `require_ok_into!`, `require_some_into!`,
+`ok_or_else_return!`, `return_if_err!`. Where `?` already says it, use `?`.
+`require_ok_into!` and `require_some_into!` write the `?` forms themselves:
+`a.map_err(f)?`, `o.ok_or(e)?` and `o.ok_or_else(|| e)?`.
+`ok_or_else_return!` and `return_if_err!` bind the error under a name the
+returned value can use.
 
 ```rust
 use simple_impl::some_or_continue;
@@ -220,6 +231,25 @@ impl_debug_redacted!(Token, "Token([REDACTED])");
 let token: Token = String::from("secret").into();
 assert_eq!(format!("{token:?}"), "Token([REDACTED])");
 assert_eq!(Token::new("x".into()).0, "x");
+```
+
+**Values (2)**: `if_else!`, `table!`. `if_else!(c => a, b)` is
+`if c { a } else { b }`; `table!(value; pattern => entry, ...)` is a `match`
+whose every arm is a value.
+
+```rust
+use simple_impl::{if_else, table};
+
+enum Level { Debug, Info, Warn, Error }
+
+impl Level {
+    fn name(&self) -> &'static str {
+        table!(self; Level::Debug => "debug", Level::Info => "info", Level::Warn => "warn", Level::Error => "error")
+    }
+}
+let quiet = true;
+let level = if_else!(quiet => Level::Warn, Level::Debug);
+assert_eq!(level.name(), "warn");
 ```
 
 `all!`, `any!`, `ensure!` and `bail!` are common names. When another crate
